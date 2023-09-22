@@ -217,6 +217,8 @@ class SearchBased:
 		:type target_pcode: list.list
 		:param potential_addrs_funcs_after_regs: Addresses functions to potential targets.
 		:type potential_addrs_funcs_after_regs: list
+		:param force: enter in the force mode
+		:type force: bool
 
 		:return: Triplet to the potential found function with the similarity result 
 		:rtype: Function, int, Address
@@ -232,7 +234,7 @@ class SearchBased:
 		similitudes = []
 		# for each function
 		for bloc in BB:
-			if force == 1:
+			if force == True:
 				# we will get the same number of instructions than the target instructions
 				# get the perfect similitude for these instructions for the function
 				if potential_addrs_funcs_after_regs == None:
@@ -249,6 +251,7 @@ class SearchBased:
 		if len(similitudes) == 0:
 			return None, 0, None
 		else:
+			# Havec the best candidates at the beginning of the list
 			similitudes.sort(key=lambda x: x[1])
 
 			if len(similitudes) > 2 and similitudes[0][1] != similitudes[1][1]:
@@ -327,6 +330,24 @@ class SearchBased:
 		return instrucs
 
 	def getSimiFunc(self, bloc, target_instrucs, target_hexa, target_pcode, potential_addrs_funcs_after_regs):
+		"""
+		Get the similitude result of a function.
+		
+		:param bloc: Function to get similitude result 
+		:type bloc: Function
+		:param target_hexa: Hexadecimal target to compare with.
+		:type target_hexa: str
+		:param target_instrucs: Instructions targets to compare with.
+		:type target_instrucs: list
+		:param target_pcode: Pcode target to compare with.
+		:type target_pcode: list.list
+		:param potential_addrs_funcs_after_regs: Addresses functions to potential targets.
+		:type potential_addrs_funcs_after_regs: list
+
+		:return: Triplet to the potential found function with the similarity result 
+		:rtype: Function, int, Address
+		"""
+		
 		# Get the hexa and instruc of the current basic bloc
 		if potential_addrs_funcs_after_regs == None:
 			instrucs = self.getInstrucs(bloc.getEntryPoint(), len(target_instrucs))
@@ -352,6 +373,24 @@ class SearchBased:
 			return (None, 0, None)
 			
 	def getBestSimiFunc(self, entry_point, target_instrucs, target_hexa, target_pcode, potential_addrs_funcs_after_regs):
+		"""
+		Get the similitude result of a function.
+		
+		:param entry_point: Address of the entry point of the function 
+		:type entry_point: Address
+		:param target_hexa: Hexadecimal target to compare with.
+		:type target_hexa: str
+		:param target_instrucs: Instructions targets to compare with.
+		:type target_instrucs: list
+		:param target_pcode: Pcode target to compare with.
+		:type target_pcode: list.list
+		:param potential_addrs_funcs_after_regs: Addresses functions to potential targets.
+		:type potential_addrs_funcs_after_regs: list
+
+		:return: Triplet to the potential found function with the similarity result 
+		:rtype: Function, int, Address
+		"""
+		
 		similitudes = []
 		ins = currentProgram.getListing().getInstructionAt(entry_point)
 		if ins == None:
@@ -509,6 +548,7 @@ class SearchBased:
 		return False
 
 	def run(self):
+		# File path for the JSON table you want to use
 		file_path = "tables/table_broadcom.json"
 		current_directory = os.getcwd()
 		absolute_path = os.path.join(current_directory, file_path)
@@ -516,7 +556,7 @@ class SearchBased:
 			# Load JSON data from the file
 			patterns = json.load(json_file)
 
-		# THRESHOLD
+		# THRESHOLD to put some functions in the force mode
 		threshold = 10
 
 		# Create all of the FunctionTargetInfo objects
@@ -524,11 +564,10 @@ class SearchBased:
 		for pattern in patterns:
 			functions_to_target.append(FunctionTargetInfo(pattern['func'], pattern['hexa'].replace(" ", ""), pattern['instr'].split(';'), pattern['regs'], [x.split(',') for x in pattern['pcode'].split(';')]))
 
-		# 1st step: only on the entry point of the function
 		functions_to_target_retry = []
-		force = 0
+		force = False
 		while 1:
-			if force == 1:
+			if force == True:
 				print("FORCE MODE ACTIVATED ! (" + str(len(functions_to_target_retry)) + " functions left)")
 				functions_to_target = functions_to_target_retry
 			for func in functions_to_target:
@@ -545,12 +584,12 @@ class SearchBased:
 
 				if type(similitudes) != list:
 					if similitudes[0] == None:
-						if force == 0:
+						if force == False:
 							functions_to_target_retry.append(func)
 							continue
 						print("No \"" + func.getName() + "\" function found matching the potentials targets \n")
 					else:
-						if force == 0 and similitudes[1] > threshold:
+						if force == False and similitudes[1] > threshold:
 							functions_to_target_retry.append(func)
 							continue
 						print("Function target found: " + similitudes[0].getName() + " (" + func.getName() + ") with a difference of " + str(similitudes[1]))
@@ -560,7 +599,7 @@ class SearchBased:
 							print("--> Load zephyr register: " + str(similitudes[2]) + "\n")
 				else:
 					# If we found multiple candidates, we have also try in force mode
-					if force == 0:
+					if force == False:
 						functions_to_target_retry.append(func)
 					print("Functions target found for " + func.getName() + " with the same best difference " + str(similitudes[1][0][1]) + ":")
 					print(str(similitudes[0]) + " candidates:")
@@ -568,9 +607,9 @@ class SearchBased:
 						print(fun[0])
 					print("")
 
-			if force == 0 and len(functions_to_target_retry) != 0:
+			if force == False and len(functions_to_target_retry) != 0:
 				threshold = 50
-				force = 1
+				force = True
 			else:
 				break
 
