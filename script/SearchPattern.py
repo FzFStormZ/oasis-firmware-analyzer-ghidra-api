@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 
-#TODO write a description for this script
+# Search pattern
 #@author 
 #@category Search.InstructionPattern
 #@keybinding 
 #@menupath 
 #@toolbar 
 
+
 import json
+import os
 
 class Tools:
 	def hexToBinary(self, hexa_str):
@@ -507,8 +509,10 @@ class SearchBased:
 		return False
 
 	def run(self):
-		file_path = "/home/kali/Documents/2A-SN/Stage/targets/table_nrf52.json"
-		with open(file_path, 'r') as json_file:
+		file_path = "tables/table_broadcom.json"
+		current_directory = os.getcwd()
+		absolute_path = os.path.join(current_directory, file_path)
+		with open(absolute_path, 'r') as json_file:
 			# Load JSON data from the file
 			patterns = json.load(json_file)
 

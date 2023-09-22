@@ -1,4 +1,4 @@
-#TODO write a description for this script
+#TODO Get informations to complete the JSON table
 #@author 
 #@category Search.InstructionPattern
 #@keybinding 
@@ -7,7 +7,8 @@
 
 from ghidra.program.model.lang import OperandType
 
-addr = "000527c4"
+# Put the address you want to get informations to complete the JSON table
+addr = "00036292"
 
 instruc = currentProgram.getListing().getInstructionAt(toAddr(addr))
 
@@ -23,7 +24,10 @@ mnemonic = instruc.getMnemonicString()
 pcode_op = ""
 for pcode in instruc.getPcode():
 	p = pcode.getOpcode()
-	pcode_op = pcode_op + "," + str(p)
+	if pcode_op == "":
+		pcode_op = str(p)
+	else:
+		pcode_op = pcode_op + "," + str(p)
 print(pcode_op)
 
 for k in range(nboperands):
